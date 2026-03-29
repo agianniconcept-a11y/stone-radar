@@ -1,42 +1,70 @@
 export default async function handler(req, res) {
   try {
-    const response = await fetch(
-      "https://journaldemonaco.gouv.mc/recherche?SearchText=&filter%5B%5D=attr_category_s%3A%22Avis+et+Communiqu%C3%A9s%22&page_limit=50&sort=published_desc",
-      {
-        headers: {
-          Accept: "text/html"
-        }
-      }
-    );
+    const urls = [
+      "https://journaldemonaco.gouv.mc/",
+      "https://journaldemonaco.gouv.mc/recherche",
+      "https://journaldemonaco.gouv.mc/en/recherche"
+    ];
 
-    if (!response.ok) {
-      throw new Error(`Erreur Monaco: ${response.status}`);
+    let html = "";
+    let workingUrl = "";
+
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            Accept: "text/html,application/xhtml+xml"
+          }
+        });
+
+        if (response.ok) {
+          const text = await response.text();
+          if (text && text.length > 100) {
+            html = text;
+            workingUrl = url;
+            break;
+          }
+        }
+      } catch (e) {
+      }
     }
 
-    const html = await response.text();
-    const text = html.toLowerCase();
+    if (!html) {
+      return res.status(200).json({
+        ok: false,
+        source: "MONACO",
+        total: 0,
+        error: "Aucune page Monaco exploitable récupérée",
+        results: []
+      });
+    }
+
+    const text = html
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
 
     const includeKeywords = [
       "appel d'offres",
       "appel a concurrence",
-      "appel à concurrence",
+      "appel a candidatures",
       "marche",
-      "marché",
+      "marches",
       "travaux",
       "urbanisme",
       "construction",
       "renovation",
-      "rénovation",
       "rehabilitation",
-      "réhabilitation",
-      "hôtel",
       "hotel",
       "villa",
       "residence",
-      "résidence",
+      "immobilier",
+      "promotion immobiliere",
+      "architecte",
       "marbre",
       "travertin",
       "granit",
+      "granite",
       "quartzite",
       "onyx",
       "corian",
@@ -48,31 +76,31 @@ export default async function handler(req, res) {
       "surface",
       "pierre",
       "pierre naturelle",
-      "revêtement",
       "revetement",
       "carrelage",
       "parement",
-      "dallage"
+      "dallage",
+      "plan de travail"
     ];
 
-    const hits = includeKeywords.filter((k) => text.includes(k.toLowerCase()));
+    const hits = includeKeywords.filter((k) => text.includes(k));
 
     const results = hits.length
       ? [
           {
             source: "MONACO",
-            type_source: "Avis / Appel d'offres / Publication officielle",
+            type_source: "Publication officielle Monaco",
             date: null,
             ville: "Monaco",
             acheteur: "Journal de Monaco",
             porteur: "Monaco",
-            objet: "Résultats détectés sur les publications officielles de Monaco",
-            departements: ["MC"],
-            type_marche: "Monaco",
+            objet: "Publications officielles Monaco avec mots-clés détectés",
+            departements: ["Monaco"],
+            type_marche: "Avis / Marché / Urbanisme",
             nature_avis: "Publication officielle",
             descripteurs: hits.slice(0, 10),
             date_limite: null,
-            url: "https://journaldemonaco.gouv.mc/",
+            url: workingUrl || "https://journaldemonaco.gouv.mc/",
             score: hits.length * 3,
             segment: "Monaco",
             mots_cles_detectes: hits.slice(0, 10),
@@ -87,12 +115,16 @@ export default async function handler(req, res) {
       ok: true,
       source: "MONACO",
       total: results.length,
+      tested_url: workingUrl || null,
       results
     });
   } catch (error) {
-    return res.status(500).json({
+    return res.status(200).json({
       ok: false,
-      error: error.message
+      source: "MONACO",
+      total: 0,
+      error: error.message,
+      results: []
     });
   }
 }
