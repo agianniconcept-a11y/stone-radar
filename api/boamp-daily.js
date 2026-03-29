@@ -1,31 +1,113 @@
 export default async function handler(req, res) {
   try {
+
     const keywords = [
+
+      // Pierre naturelle
+      "pierre",
+      "pierre naturelle",
       "marbre",
+      "marfil",
       "travertin",
       "granit",
       "granite",
-      "quartz",
       "quartzite",
-      "corian",
+      "ardoise",
+      "calcaire",
+      "onyx",
+
+      // Céramique / surfaces
+      "céramique",
+      "ceramique",
+      "grès cérame",
+      "gres cerame",
+      "carrelage",
+      "faïence",
+      "faience",
+      "dallage",
+      "parement",
+      "revêtement",
+      "revetement",
+      "revêtements",
+      "revetements",
+      "revêtements de sols",
+      "revêtements muraux",
+      "revêtements sol",
+      "revêtements mur",
+
+      // Marques premium
       "dekton",
       "porcelanosa",
       "infinity",
-      "ceramique",
-      "céramique",
-      "gres cerame",
-      "grès cérame",
-      "faience",
-      "faïence",
-      "pierre",
-      "pierre naturelle",
-      "opus",
-      "parement",
-      "dallage",
-      "revetement",
-      "revêtement",
+      "neolith",
+      "laminam",
+      "sapienstone",
+      "caesarstone",
+      "silestone",
+      "compac",
+      "lapitec",
+
+      // Résines / composites
+      "corian",
+      "solid surface",
+      "quartz",
+      "surface minérale",
+      "surface minerale",
+
+      // Construction / rénovation
+      "construction",
+      "réhabilitation",
+      "rehabilitation",
+      "rénovation",
+      "renovation",
+      "extension",
+      "aménagement",
+      "amenagement",
+      "réaménagement",
+      "reamenagement",
+
+      // Lots techniques
+      "lot carrelage",
+      "lot pierre",
+      "lot finition",
+      "lot finitions",
+      "lot revêtement",
+      "lot revetement",
+      "second oeuvre",
+      "second œuvre",
+      "finition",
+
+      // Bâtiments ciblés
+      "hôtel",
+      "hotel",
+      "résidence",
+      "residence",
+      "villa",
+      "immeuble",
+      "programme immobilier",
+      "promotion immobilière",
+      "promotion immobiliere",
+      "logements",
+      "bureaux",
+      "commerce",
+      "restaurant",
+      "centre commercial",
+
+      // Espaces spécifiques
+      "hall",
+      "accueil",
+      "réception",
+      "reception",
+      "lobby",
+      "sanitaires",
+      "salle de bain",
+      "salles de bain",
+      "cuisine",
       "plan de travail",
-      "carrelage"
+      "comptoir",
+      "banque d'accueil",
+      "banque accueil"
+
     ];
 
     const departments = ["06", "83"];
@@ -43,6 +125,7 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     const filtered = data.results.filter(item => {
+
       const text = JSON.stringify(item).toLowerCase();
 
       const hasKeyword = keywords.some(k => text.includes(k));
@@ -52,12 +135,14 @@ export default async function handler(req, res) {
       const hasDept = departments.some(d => dept.includes(d));
 
       return hasKeyword && hasDept;
+
     });
 
     return res.status(200).json({
       ok:true,
       zone:["06","83"],
       since: sinceIso,
+      keywords_count: keywords.length,
       total: filtered.length,
       results: filtered.slice(0,20)
     });
