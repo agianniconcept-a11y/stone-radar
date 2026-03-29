@@ -33,20 +33,25 @@ export default async function handler(req, res) {
       "revetements muraux",
       "revêtements muraux",
       "plan de travail",
+      "surface",
+      "surfaces",
+      "solid surface",
+      "surface minerale",
+      "surface minérale",
+      "corian",
       "dekton",
+      "cosentino",
+      "xtone",
       "porcelanosa",
       "infinity",
-      "neolith",
+      "infinity surfaces",
+      "lapitec",
       "laminam",
+      "neolith",
       "sapienstone",
       "caesarstone",
       "silestone",
       "compac",
-      "lapitec",
-      "corian",
-      "solid surface",
-      "surface minerale",
-      "surface minérale",
       "lot carrelage",
       "lot pierre",
       "lot revetement",
@@ -54,6 +59,8 @@ export default async function handler(req, res) {
       "lot finition",
       "lot finitions",
       "finitions",
+      "facade",
+      "façade",
       "hall",
       "lobby",
       "reception",
@@ -66,8 +73,12 @@ export default async function handler(req, res) {
       "cuisine",
       "hotel",
       "hôtel",
+      "palace",
+      "resort",
       "residence",
       "résidence",
+      "residence de tourisme",
+      "résidence de tourisme",
       "villa",
       "immeuble",
       "programme immobilier",
@@ -75,6 +86,7 @@ export default async function handler(req, res) {
       "promotion immobilière",
       "restaurant",
       "commerce",
+      "boutique",
       "bureaux",
       "construction",
       "rehabilitation",
@@ -85,7 +97,13 @@ export default async function handler(req, res) {
       "aménagement",
       "reamenagement",
       "réaménagement",
-      "extension"
+      "extension",
+      "restructuration",
+      "architecte",
+      "maitrise d'oeuvre",
+      "maîtrise d'oeuvre",
+      "conception realisation",
+      "conception-réalisation"
     ];
 
     const excludeKeywords = [
@@ -116,7 +134,11 @@ export default async function handler(req, res) {
       "gardien",
       "lixiviats",
       "reseaux",
-      "réseaux"
+      "réseaux",
+      "consommables",
+      "petit outillage",
+      "outillage",
+      "fourniture de bureau"
     ];
 
     const departments = ["06", "83"];
@@ -156,6 +178,35 @@ export default async function handler(req, res) {
       return words.filter((word) => text.includes(normalize(word)));
     }
 
+    function computeSegment(text) {
+      if (text.includes("hotel") || text.includes("hôtel") || text.includes("palace") || text.includes("resort")) {
+        return "Hôtellerie";
+      }
+      if (text.includes("villa")) {
+        return "Villa de luxe";
+      }
+      if (
+        text.includes("programme immobilier") ||
+        text.includes("promotion immobiliere") ||
+        text.includes("promotion immobilière") ||
+        text.includes("residence") ||
+        text.includes("résidence") ||
+        text.includes("immeuble")
+      ) {
+        return "Promoteur / Résidentiel";
+      }
+      if (
+        text.includes("maitrise d'oeuvre") ||
+        text.includes("maîtrise d'oeuvre") ||
+        text.includes("architecte") ||
+        text.includes("conception realisation") ||
+        text.includes("conception-réalisation")
+      ) {
+        return "MOE / Architecte";
+      }
+      return "Public / Travaux";
+    }
+
     function getRelevance(item) {
       const text = normalize(JSON.stringify(item));
       const includeHits = detectHits(text, includeKeywords);
@@ -170,13 +221,25 @@ export default async function handler(req, res) {
       score += includeHits.length * 3;
       score -= excludeHits.length * 4;
 
-      if (objet.includes("marbre")) score += 8;
-      if (objet.includes("travertin")) score += 8;
-      if (objet.includes("quartzite")) score += 8;
+      if (objet.includes("marbre")) score += 10;
+      if (objet.includes("travertin")) score += 10;
+      if (objet.includes("quartzite")) score += 10;
+      if (objet.includes("onyx")) score += 10;
+      if (objet.includes("corian")) score += 8;
+      if (objet.includes("dekton")) score += 8;
+      if (objet.includes("cosentino")) score += 8;
+      if (objet.includes("xtone")) score += 8;
+      if (objet.includes("porcelanosa")) score += 8;
+      if (objet.includes("infinity")) score += 8;
       if (objet.includes("carrelage")) score += 5;
       if (objet.includes("parement")) score += 5;
       if (objet.includes("revetement")) score += 5;
-      if (objet.includes("revetement")) score += 5;
+      if (objet.includes("plan de travail")) score += 6;
+
+      if (objet.includes("hotel") || objet.includes("hôtel") || objet.includes("palace")) score += 7;
+      if (objet.includes("villa")) score += 7;
+      if (objet.includes("programme immobilier") || objet.includes("promotion")) score += 6;
+      if (objet.includes("renovation") || objet.includes("rénovation")) score += 4;
 
       if (typeMarche.includes("travaux")) score += 3;
       if (nature.includes("avis de marche")) score += 3;
@@ -185,7 +248,8 @@ export default async function handler(req, res) {
       return {
         score,
         includeHits,
-        excludeHits
+        excludeHits,
+        segment: computeSegment(text)
       };
     }
 
@@ -216,8 +280,12 @@ export default async function handler(req, res) {
       }
 
       return {
+        source: "BOAMP",
+        type_source: "Appel d'offres / marché public",
         date: item.dateparution || null,
+        ville: null,
         acheteur: item.nomacheteur || null,
+        porteur: item.nomacheteur || null,
         objet: item.objet || null,
         departements: deps,
         type_marche: typeMarche.join(", ") || null,
@@ -226,6 +294,7 @@ export default async function handler(req, res) {
         date_limite: item.datelimitereponse || null,
         url: item.url_avis || null,
         score: relevance.score,
+        segment: relevance.segment,
         mots_cles_detectes: relevance.includeHits.slice(0, 10),
         mots_cles_exclus: relevance.excludeHits.slice(0, 10),
         verdict,
@@ -233,39 +302,13 @@ export default async function handler(req, res) {
       };
     });
 
-    const pertinents = analyzed
-      .filter((item) => item.verdict === "Pertinent")
-      .sort((a, b) => b.score - a.score);
-
-    const aVerifier = analyzed
-      .filter((item) => item.verdict === "À vérifier")
-      .sort((a, b) => b.score - a.score);
-
-    const horsCible = analyzed
-      .filter((item) => item.verdict === "Non pertinent")
-      .sort((a, b) => a.score - b.score);
-
-    const synthese =
-      pertinents.length > 0
-        ? `${pertinents.length} opportunité(s) pertinente(s), ${aVerifier.length} à vérifier, ${horsCible.length} hors cible`
-        : aVerifier.length > 0
-        ? `0 opportunité clairement pertinente, ${aVerifier.length} résultat(s) à vérifier, ${horsCible.length} hors cible`
-        : `0 opportunité pertinente, ${horsCible.length} résultat(s) hors cible`;
-
     return res.status(200).json({
       ok: true,
-      synthese,
-      resume: {
-        zone: departments,
-        since: sinceIso,
-        total_analyse: analyzed.length,
-        pertinents: pertinents.length,
-        a_verifier: aVerifier.length,
-        hors_cible: horsCible.length
-      },
-      opportunites: pertinents,
-      a_verifier: aVerifier,
-      hors_cible: horsCible.slice(0, 20)
+      source: "BOAMP",
+      zone: departments,
+      since: sinceIso,
+      total: analyzed.length,
+      results: analyzed
     });
   } catch (error) {
     return res.status(500).json({
