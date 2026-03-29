@@ -36,7 +36,7 @@ export default async function handler(req, res) {
     const departments = ["06", "83"];
 
     const daysBack = 30;
-    const since = new Date();
+    const since = 2026-02-01();
     since.setDate(since.getDate() - daysBack);
     const sinceIso = since.toISOString().slice(0, 10);
 
