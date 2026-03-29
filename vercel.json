@@ -3,6 +3,14 @@
     {
       "path": "/api/boamp-daily",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/urbanisme-daily",
+      "schedule": "20 5 * * *"
+    },
+    {
+      "path": "/api/monaco-daily",
+      "schedule": "40 5 * * *"
     }
   ]
 }
