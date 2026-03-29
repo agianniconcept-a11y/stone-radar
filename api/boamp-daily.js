@@ -1,8 +1,6 @@
-{
-  "crons": [
-    {
-      "path": "/api/boamp-daily",
-      "schedule": "0 5 * * *"
-    }
-  ]
+export default async function handler(req, res) {
+  return res.status(200).json({
+    ok: true,
+    message: "Stone radar actif"
+  });
 }
